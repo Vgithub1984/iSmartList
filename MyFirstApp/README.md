@@ -165,8 +165,14 @@ struct MyList: Identifiable, Codable, Hashable {
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+
 ## Acknowledgments
 
 - Built with SwiftUI
 - Uses native iOS design patterns
 - Follows Apple's Human Interface Guidelines
+
+
+## Author
+
+Created by Varun Patel, 2025-08-25.

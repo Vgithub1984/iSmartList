@@ -8,6 +8,7 @@
 //  - Integrates with DataStore for data persistence
 
 import SwiftUI
+import UIKit
 
 /// Represents a single item in a shopping list
 /// - Note: Conforms to `Identifiable`, `Hashable`, and `Codable` for SwiftUI and persistence
@@ -145,52 +146,6 @@ struct ListDetailView: View {
     /// Main view content
     var body: some View {
         VStack(spacing: 0) {
-            // Dismiss keyboard on drag
-            Color.clear
-                .frame(height: 0)
-                .onTapGesture {
-                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                }
-            VStack(spacing: 0) {
-                // List header with back button and title
-                HStack {
-                    Spacer()
-                    // MARK: - Back Button
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "chevron.left")
-                            .font(.title2)
-                            .foregroundColor(.black)
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 6)
-                    .background(.ultraThinMaterial)
-                    .clipShape(Capsule())
-                    .shadow(color: .black.opacity(0.08), radius: 2, y: 1)
-                    
-                    // MARK: - List Title
-                    Spacer()
-                    VStack(spacing: 2) {
-                        Text(list.name)
-                            .font(.headline)
-                            .lineLimit(1)
-                        Text(list.created.formatted(date: .abbreviated, time: .shortened))
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .lineLimit(1)
-                    }
-                    .frame(maxWidth: .infinity)
-                    
-                    // Invisible view with same width as back button for balance
-                    Color.clear
-                        .frame(width: 50, height: 1)
-                }
-                
-            }
-            .frame(height: 55)
-            .background(.green.opacity(0.4))
-  
             // MARK: - Progress Bar
             /// Displays the completion progress of the list
             HStack(spacing: 5) {
@@ -328,7 +283,21 @@ struct ListDetailView: View {
         } message: {
             Text("\"\(duplicateItemName)\" is already in your list and will not be added.")
         }
-        .navigationBarBackButtonHidden(true)
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                VStack(spacing: 2) {
+                    Text(list.name)
+                        .font(.headline)
+                    Text(list.created.formatted(date: .abbreviated, time: .shortened))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            
+        }
+        
     }
 }
 

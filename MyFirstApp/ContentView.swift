@@ -179,29 +179,24 @@ struct ContentView: View {
     var body: some View {
         // Main container with tab view and floating action button
         ZStack(alignment: .bottomTrailing) {
-            // Floating action button for adding new lists
+            // Floating action button for adding new lists (only on Lists tab)
             if selectedTab == 0 && !isShowingListDetail {
-                VStack(spacing: 0) {
-                    Spacer()
-                    
-                    // The + button
-                    Button(action: {
-                        dataStore.addList(name: "List #\(dataStore.lists.count + 1)")
-                    }) {
-                        Image(systemName: "plus")
-                            .font(.system(size: 24, weight: .regular))
-                            .foregroundColor(.black)
-                            .frame(width: 56, height: 56)
-                            .background(.ultraThinMaterial)
-                            .clipShape(Circle())
-                            .shadow(radius: 4)
-                            .padding(.trailing, 45)
-                            .padding(.bottom, 55) // Position above the tab bar
-                    }
-                    
-                    Spacer()
-                        .frame(height: 8)
+                Button(action: {
+                    dataStore.addList(name: "List #\(dataStore.lists.count + 1)")
+                }) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 24, weight: .regular))
+                        .foregroundColor(.black)
+                        .frame(width: 56, height: 56)
+                        .background(Color.white.opacity(0.8))
+                        .clipShape(Circle())
+                        .shadow(radius: 4)
                 }
+                .buttonStyle(PlainButtonStyle())
+                .contentShape(Circle())
+                .frame(width: 56, height: 56)
+                .padding(.trailing, 45)
+                .padding(.bottom, 70)
                 .transition(.scale)
                 .zIndex(1) // Ensure it's above the tab bar
             }
@@ -214,6 +209,7 @@ struct ContentView: View {
                         .onChange(of: selectedTab) { _ in
                             isShowingListDetail = false
                         }
+                        .toolbar(selectedTab == 0 && isShowingListDetail ? .hidden : .visible, for: .tabBar)
                         .toolbar {
                             // Delete All button (if there are lists)
                             ToolbarItem(placement: .navigationBarTrailing) {
@@ -262,34 +258,6 @@ struct ContentView: View {
                 
                 NavigationStack {
                     DeletedView()
-                        .toolbar {
-                            ToolbarItem(placement: .navigationBarTrailing) {
-                                if !dataStore.lists.isEmpty {
-                                    Button(role: .destructive) {
-                                        showingDeleteAllDialog = true
-                                    } label: {
-                                        Text("Delete All")
-                                            .foregroundColor(.red)
-                                    }
-                                }
-                            }
-                        }
-                        .confirmationDialog("Delete All Lists?", isPresented: $showingDeleteAllDialog, titleVisibility: .visible) {
-                            Button("Delete All", role: .destructive) {
-                                let moved = dataStore.lists.map { list -> MyList in
-                                    var l = list
-                                    l.isDeleted = true
-                                    l.deletedAt = Date()
-                                    return l
-                                }
-                                dataStore.deletedLists.append(contentsOf: moved)
-                                dataStore.lists.removeAll()
-                                dataStore.saveLists()
-                            }
-                            Button("Cancel", role: .cancel) {}
-                        } message: {
-                            Text("Are you sure you want to move all your lists to Deleted? This can be undone from the Deleted tab.")
-                        }
                 }
                 .tabItem {
                     Label {
@@ -330,8 +298,7 @@ struct ContentView: View {
                 
                 /// Displays the profile view
                 NavigationStack {
-                    Text("Profile View")
-                        .font(.title)
+                    ProfileView()
                 }
                 .tabItem {
                     /// Label for the Profile tab
@@ -357,3 +324,4 @@ struct ContentView: View {
     ContentView()
         .environmentObject(DataStore())
 }
+

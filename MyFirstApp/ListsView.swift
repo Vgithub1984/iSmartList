@@ -69,7 +69,11 @@ struct ListsView: View {
                     if let listIndex = dataStore.lists.firstIndex(where: { $0.id == list.id }) {
                         NavigationLink(destination:
                             ListDetailView(list: $dataStore.lists[listIndex])
+                                .onAppear {
+                                    isShowingListDetail = true
+                                }
                                 .onDisappear {
+                                    isShowingListDetail = false
                                     // Save any changes when the view disappears
                                     dataStore.saveLists()
                                 }

@@ -28,10 +28,22 @@ struct DeletedView: View {
         List {
             // Show empty state if no deleted lists exist
             if dataStore.deletedLists.isEmpty {
-                Text("No Deleted items available")
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .listRowBackground(Color.clear)
+                VStack(spacing: 8) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 48))
+                        .foregroundColor(.secondary)
+                    Text("No Deleted Lists")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                    Text("Lists you delete will appear here for recovery or permanent deletion")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 32)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding()
+                .listRowBackground(Color.clear)
             } else {
                 // Display each deleted list with restore/delete options
                 ForEach(dataStore.deletedLists) { list in
@@ -107,9 +119,9 @@ struct DeletedView: View {
         .navigationTitle("Deleted")
         // MARK: - Toolbar
         .toolbar {
-            // Delete All button (if there are deleted lists)
-            ToolbarItem(placement: .navigationBarTrailing) {
-                if !dataStore.deletedLists.isEmpty {
+            // Show Delete All button only when there are deleted lists
+            if !dataStore.deletedLists.isEmpty {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button(role: .destructive) {
                         showingDeleteAllDialog = true
                     } label: {
