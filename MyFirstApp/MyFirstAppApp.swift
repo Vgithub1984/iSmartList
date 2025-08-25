@@ -6,27 +6,16 @@
 //
 
 import SwiftUI
-import SwiftData
 
 @main
 struct MyFirstAppApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
-
+    // Initialize the DataStore as a StateObject to ensure it persists for the app's lifetime
+    @StateObject private var dataStore = DataStore()
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(dataStore) // Make DataStore available throughout the app
         }
-        .modelContainer(sharedModelContainer)
     }
 }
