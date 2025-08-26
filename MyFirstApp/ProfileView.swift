@@ -1,3 +1,4 @@
+// Moved to Views/ directory as part of project restructuring.
 import SwiftUI
 
 struct MenuItem: Identifiable {
@@ -423,3 +424,4 @@ struct InfoRow: View {
             .environmentObject(DataStore())
     }
 }
+

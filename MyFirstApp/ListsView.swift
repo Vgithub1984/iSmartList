@@ -7,6 +7,9 @@
 //  - Integrates with DataStore for data management
 
 import SwiftUI
+import Foundation
+
+// Import the shared SearchBar component
 
 /// Displays a scrollable list of all active shopping lists
 /// - Note: Integrates with DataStore for data management and supports swipe actions
@@ -22,10 +25,11 @@ struct ListsView: View {
     
     /// The filtered lists based on search text
     private var filteredLists: [MyList] {
+        let activeLists = dataStore.activeLists
         if searchText.isEmpty {
-            return dataStore.lists
+            return activeLists
         } else {
-            return dataStore.lists.filter {
+            return activeLists.filter {
                 $0.name.localizedCaseInsensitiveContains(searchText)
             }
         }
@@ -36,54 +40,87 @@ struct ListsView: View {
     
     // MARK: - Body
     
+    // MARK: - Helper Views
+    
+    private var searchBar: some View {
+        SearchBar(text: $searchText)
+            .padding(.horizontal)
+    }
+    
+    private var emptyStateView: some View {
+        VStack(alignment: .center, spacing: 10) {
+            Spacer()
+            Image(systemName: "list.bullet")
+                .font(.system(size: 40))
+                .foregroundColor(.secondary)
+                .padding(.bottom, 8)
+            
+            Text(emptyStateTitle)
+                .font(.headline)
+            
+            Text(emptyStateMessage)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+            
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    
+    private var emptyStateTitle: String {
+        searchText.isEmpty ? "No Lists Available" : "No Matching Lists"
+    }
+    
+    private var emptyStateMessage: String {
+        searchText.isEmpty 
+            ? "Tap the + button to create your first list"
+            : "No lists found for \"\(searchText)\""
+    }
+    
+    private func listRow(for list: MyList, at index: Int) -> some View {
+        Group {
+            if let listIndex = dataStore.lists.firstIndex(where: { $0.id == list.id }) {
+                NavigationLink(destination: listDetailView(for: list, at: listIndex)) {
+                    ListRowView(list: list, onDelete: {
+                        listToDelete = list
+                        showDeleteAlert = true
+                    })
+                }
+            }
+        }
+    }
+    
+    private func listDetailView(for list: MyList, at index: Int) -> some View {
+        // Find the index of the list in the data store to ensure we're working with the correct reference
+        if let listIndex = dataStore.lists.firstIndex(where: { $0.id == list.id }) {
+            return AnyView(
+                ListDetailView(list: $dataStore.lists[listIndex])
+                    .onAppear { isShowingListDetail = true }
+                    .onDisappear {
+                        isShowingListDetail = false
+                        dataStore.save()
+                    }
+            )
+        } else {
+            // Fallback in case the list isn't found (shouldn't happen in normal operation)
+            return AnyView(Text("List not found"))
+        }
+    }
+    
+    // MARK: - Main View
+    
     /// Main view content
     var body: some View {
         List {
-            // Show search bar
-            SearchBar(text: $searchText)
-                .padding(.horizontal)
+            searchBar
             
-            // Show empty state when no lists exist
             if filteredLists.isEmpty {
-                VStack(alignment: .center, spacing: 10) {
-                    Spacer()
-                    Image(systemName: "list.bullet")
-                        .font(.system(size: 40))
-                        .foregroundColor(.secondary)
-                        .padding(.bottom, 8)
-                    Text(searchText.isEmpty ? "No Lists Available" : "No Matching Lists")
-                        .font(.headline)
-                    Text(searchText.isEmpty ?
-                         "Tap the + button to create your first list" :
-                         "No lists found for \"\(searchText)\"")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
-                    Spacer()
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                emptyStateView
             } else {
-                // Display each list item with swipe actions wrapped in NavigationLink
                 ForEach(Array(filteredLists.enumerated()), id: \.element.id) { index, list in
-                    if let listIndex = dataStore.lists.firstIndex(where: { $0.id == list.id }) {
-                        NavigationLink(destination:
-                            ListDetailView(list: $dataStore.lists[listIndex])
-                                .onAppear {
-                                    isShowingListDetail = true
-                                }
-                                .onDisappear {
-                                    isShowingListDetail = false
-                                    // Save any changes when the view disappears
-                                    dataStore.saveLists()
-                                }
-                        ) {
-                            ListRowView(list: list, onDelete: {
-                                listToDelete = list
-                                showDeleteAlert = true
-                            })
-                        }
-                    }
+                    listRow(for: list, at: index)
                 }
             }
         }
@@ -92,7 +129,7 @@ struct ListsView: View {
         .alert("Delete List?", isPresented: $showDeleteAlert, presenting: listToDelete) { list in
             Button("Delete", role: .destructive) {
                 withAnimation {
-                    dataStore.deleteList(list)
+                    dataStore.softDeleteList(list)
                 }
                 listToDelete = nil
             }
@@ -100,7 +137,7 @@ struct ListsView: View {
                 listToDelete = nil
             }
         } message: { list in
-            Text("Are you sure you want to delete \"\(list.name)\"? This action can be undone from the Deleted tab.")
+            Text("Are you sure you want to move \"\(list.name)\" to the Deleted tab? You can restore it later.")
         }
     }
 }
@@ -108,18 +145,49 @@ struct ListsView: View {
 struct ListRowView: View {
     let list: MyList
     let onDelete: () -> Void
+    
+    private var purchasedCount: Int { list.items.filter { $0.isCompleted }.count }
+    private var totalCount: Int { list.items.count }
+    private var isActive: Bool { purchasedCount != totalCount && totalCount > 0 }
 
     var body: some View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 6) {
                 Text(list.name)
-                    .font(.headline)
-                    .foregroundColor(.primary)
-                Text(list.created.formatted(date: .abbreviated, time: .shortened))
+                    .font(.headline.bold())
+                    .foregroundColor(.accentColor)
+                Text(list.createdAt.formatted(date: .abbreviated, time: .shortened))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
             Spacer()
+            VStack(alignment: .trailing) {
+                HStack(spacing: 6) {
+                    if purchasedCount == totalCount && totalCount > 0 {
+                        Image(systemName: "cart.fill")
+                            .foregroundColor(.green)
+                    } else {
+                        Image(systemName: "cart.fill")
+                            .foregroundColor(.accentColor)
+                    }
+                        
+                    Text("\(purchasedCount) / \(totalCount)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                
+                if purchasedCount == totalCount && totalCount > 0 {
+                    Text("Completed")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                else if purchasedCount != totalCount && totalCount > 0 {
+                    Text("Active")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                
+            }
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 8)
@@ -145,48 +213,14 @@ struct ListRowView: View {
     }
 }
 
-// MARK: - Search Bar
-struct SearchBar: View {
-    @Binding var text: String
-    @FocusState private var isFocused: Bool
-    
-    var body: some View {
-        HStack {
-            HStack {
-                Image(systemName: "magnifyingglass")
-                    .foregroundColor(.secondary)
-                
-                TextField("Search", text: $text)
-                    .textFieldStyle(PlainTextFieldStyle())
-                    .focused($isFocused)
-                    .autocorrectionDisabled()
-                    .textInputAutocapitalization(.never)
-                
-                if !text.isEmpty {
-                    Button(action: { text = "" }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.secondary)
-                    }
-                }
-            }
-            .padding(8)
-            .background(Color(.systemGray6))
-            .cornerRadius(10)
-        
-        }
-        .animation(.easeInOut, value: isFocused)
-        .padding(.vertical, 8)
-    }
-}
-
 // MARK: - Preview
 
 #Preview {
     let dataStore = DataStore()
     dataStore.lists = [
-        MyList(name: "Grocery List", created: Date().addingTimeInterval(-86400 * 2)),
-        MyList(name: "Work Tasks", created: Date().addingTimeInterval(-86400)),
-        MyList(name: "Home Improvement", created: Date())
+        MyList(name: "Grocery List", items: [], createdAt: Date().addingTimeInterval(-86400 * 2)),
+        MyList(name: "Work Tasks", items: [], createdAt: Date().addingTimeInterval(-86400)),
+        MyList(name: "Home Improvement", items: [], createdAt: Date())
     ]
     
     return NavigationStack {
@@ -194,4 +228,3 @@ struct SearchBar: View {
             .environmentObject(dataStore)
     }
 }
-

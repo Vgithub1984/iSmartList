@@ -5,161 +5,10 @@
 //  Created by Varun Patel on 8/24/25.
 //
 
+// Model and DataStore have been moved to Models/MyList.swift and ViewModels/DataStore.swift respectively.
+
 import SwiftUI
 import SwiftData
-import Combine
-
-/// Represents a single list in the application
-/// - Note: Conforms to `Identifiable` for SwiftUI list views and `Codable` for persistence
-struct MyList: Identifiable, Codable, Hashable {
-    /// Unique identifier for the list
-    var id: UUID
-    /// Display name of the list
-    var name: String
-    /// Creation timestamp of the list
-    var created: Date
-    /// Flag indicating if the list has been soft-deleted
-    var isDeleted: Bool
-    /// Timestamp when the list was soft-deleted (nil if not deleted)
-    var deletedAt: Date?
-    /// Serialized data containing the list's items (stored as JSON)
-    var itemsData: Data?
-    
-    /// Coding keys for Codable conformance
-    private enum CodingKeys: String, CodingKey {
-        case id, name, created, isDeleted, deletedAt, itemsData
-    }
-    
-    /// Initializes a new list with the specified parameters
-    /// - Parameters:
-    ///   - id: Unique identifier (defaults to new UUID)
-    ///   - name: The display name of the list
-    ///   - created: Creation date (defaults to current date)
-    ///   - isDeleted: Whether the list is marked as deleted (defaults to false)
-    ///   - deletedAt: When the list was deleted (defaults to nil)
-    ///   - itemsData: Serialized items data (defaults to nil)
-    init(id: UUID = UUID(),
-         name: String,
-         created: Date = Date(),
-         isDeleted: Bool = false,
-         deletedAt: Date? = nil,
-         itemsData: Data? = nil) {
-        self.id = id
-        self.name = name
-        self.created = created
-        self.isDeleted = isDeleted
-        self.deletedAt = deletedAt
-        self.itemsData = itemsData
-    }
-    
-    // Required for Hashable conformance
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
-    
-    // Required for Equatable conformance (part of Hashable)
-    static func == (lhs: MyList, rhs: MyList) -> Bool {
-        lhs.id == rhs.id
-    }
-}
-
-/// Manages the application's data including lists and deleted lists
-/// - Note: Uses `@MainActor` to ensure UI updates happen on the main thread
-@MainActor
-class DataStore: ObservableObject {
-    /// Array of active (non-deleted) lists
-    @Published var lists: [MyList] = []
-    /// Array of soft-deleted lists
-    @Published var deletedLists: [MyList] = []
-    
-    /// Initializes the DataStore and loads savedp data
-    init() {
-        loadLists()
-    }
-    
-    /// Adds a new list with the given name
-    /// - Parameter name: The name of the new list
-    func addList(name: String) {
-        let newList = MyList(name: name, created: Date())
-        lists.append(newList)
-        saveLists()
-    }
-    
-    /// Soft-deletes a list by moving it to the deletedLists array
-    /// - Parameter list: The list to be soft-deleted
-    func deleteList(_ list: MyList) {
-        if let index = lists.firstIndex(where: { $0.id == list.id }) {
-            var deletedList = lists[index]
-            deletedList.isDeleted = true
-            deletedList.deletedAt = Date()
-            lists.remove(at: index)
-            deletedLists.append(deletedList)
-            saveLists()
-        }
-    }
-    
-    /// Restores a soft-deleted list by moving it back to the active lists
-    /// - Parameter list: The list to be restored
-    func restoreList(_ list: MyList) {
-        if let index = deletedLists.firstIndex(where: { $0.id == list.id }) {
-            var restoredList = deletedLists[index]
-            restoredList.isDeleted = false
-            restoredList.deletedAt = nil
-            deletedLists.remove(at: index)
-            lists.append(restoredList)
-            saveLists()
-        }
-    }
-    
-    /// Permanently deletes a list from the deleted lists
-    /// - Parameter list: The list to be permanently deleted
-    func permanentDelete(_ list: MyList) {
-        if let index = deletedLists.firstIndex(where: { $0.id == list.id }) {
-            deletedLists.remove(at: index)
-            saveLists()
-        }
-    }
-    
-    /// Saves both active and deleted lists to UserDefaults
-    /// - Note: Uses JSONEncoder to serialize the lists and stores them in UserDefaults
-    func saveLists() {
-        do {
-            let activeData = try JSONEncoder().encode(lists)
-            let deletedData = try JSONEncoder().encode(deletedLists)
-            UserDefaults.standard.set(activeData, forKey: "activeLists")
-            UserDefaults.standard.set(deletedData, forKey: "deletedLists")
-        } catch {
-            print("Error saving lists: \(error.localizedDescription)")
-        }
-    }
-    
-    /// Loads both active and deleted lists from UserDefaults
-    private func loadLists() {
-        // Load active lists
-        if let savedActiveData = UserDefaults.standard.data(forKey: "activeLists") {
-            do {
-                lists = try JSONDecoder().decode([MyList].self, from: savedActiveData)
-                // Ensure no deleted lists are in the active lists
-                lists.removeAll(where: { $0.isDeleted })
-            } catch {
-                print("Error loading active lists: \(error.localizedDescription)")
-            }
-        }
-        
-        // Load deleted lists
-        if let savedDeletedData = UserDefaults.standard.data(forKey: "deletedLists") {
-            do {
-                deletedLists = try JSONDecoder().decode([MyList].self, from: savedDeletedData)
-                // Ensure all deleted lists have the correct isDeleted flag
-                for i in deletedLists.indices {
-                    deletedLists[i].isDeleted = true
-                }
-            } catch {
-                print("Error loading deleted lists: \(error.localizedDescription)")
-            }
-        }
-    }
-}
 
 /// Main application view containing the tab-based navigation
 /// - Note: Manages the overall app structure including tabs and floating action button
@@ -173,155 +22,170 @@ struct ContentView: View {
     @State private var showingDeleteAllDialog = false
     @State private var showingListsDeleteAllDialog = false
     
+    @State private var showNewListDialog = false
+    @State private var newListName = ""
+    
     // MARK: - Body
     
-    /// Main app content with tab view and floating action button
-    var body: some View {
-        // Main container with tab view and floating action button
-        ZStack(alignment: .bottomTrailing) {
-            // Floating action button for adding new lists (only on Lists tab)
-            if selectedTab == 0 && !isShowingListDetail {
-                Button(action: {
-                    dataStore.addList(name: "List #\(dataStore.lists.count + 1)")
-                }) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 24, weight: .regular))
-                        .foregroundColor(.black)
-                        .frame(width: 56, height: 56)
-                        .background(Color.white.opacity(0.8))
-                        .clipShape(Circle())
-                        .shadow(radius: 4)
-                }
-                .buttonStyle(PlainButtonStyle())
-                .contentShape(Circle())
+    // MARK: - Helper Views
+    
+    private var addButton: some View {
+        Button(action: {
+            newListName = ""
+            showNewListDialog = true
+        }) {
+            Image(systemName: "plus")
+                .font(.system(size: 24, weight: .regular))
+                .foregroundColor(.black)
                 .frame(width: 56, height: 56)
-                .padding(.trailing, 45)
-                .padding(.bottom, 70)
-                .transition(.scale)
-                .zIndex(1) // Ensure it's above the tab bar
+                .background(Color.white.opacity(0.8))
+                .clipShape(Circle())
+                .shadow(radius: 4)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .contentShape(Circle())
+        .frame(width: 56, height: 56)
+        .padding(.trailing, 45)
+        .padding(.bottom, 70)
+        .transition(.scale)
+        .zIndex(1) // Ensure it's above the tab bar
+    }
+    
+    private var listsTab: some View {
+        NavigationStack {
+            ListsView(isShowingListDetail: $isShowingListDetail)
+                .onChange(of: selectedTab) { _ in
+                    isShowingListDetail = false
+                }
+                .toolbar(selectedTab == 0 && isShowingListDetail ? .hidden : .visible, for: .tabBar)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        if !dataStore.lists.isEmpty {
+                            Button(role: .destructive) {
+                                showingListsDeleteAllDialog = true
+                            } label: {
+                                Text("Delete All")
+                                    .foregroundColor(.red)
+                            }
+                        }
+                    }
+                }
+                .confirmationDialog("Delete All Lists?", 
+                                 isPresented: $showingListsDeleteAllDialog, 
+                                 titleVisibility: .visible) {
+                    Button("Delete All", role: .destructive) {
+                        deleteAllLists()
+                    }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("Are you sure you want to move all your lists to Deleted? This can be undone from the Deleted tab.")
+                }
+        }
+    }
+    
+    private func deleteAllLists() {
+        for var list in dataStore.lists {
+            list.isDeleted = true
+            list.updatedAt = Date()
+            dataStore.updateList(list)
+        }
+    }
+    
+    private var deletedTab: some View {
+        NavigationStack {
+            DeletedView()
+        }
+    }
+    
+    private var statsTab: some View {
+        NavigationStack {
+            Text("Stats View")
+                .font(.title)
+        }
+    }
+    
+    private var profileTab: some View {
+        NavigationStack {
+            ProfileView()
+        }
+    }
+    
+    private func tabLabel(title: String, systemImage: String, tag: Int) -> some View {
+        Label {
+            Text(title)
+                .foregroundStyle(selectedTab == tag ? .primary : .secondary)
+                .fontWeight(selectedTab == tag ? .bold : .regular)
+        } icon: {
+            Image(systemName: systemImage)
+                .foregroundStyle(selectedTab == tag ? .primary : .secondary)
+                .fontWeight(selectedTab == tag ? .bold : .regular)
+        }
+    }
+    
+    // MARK: - Main View
+    
+    var body: some View {
+        ZStack(alignment: .bottomTrailing) {
+            if selectedTab == 0 && !isShowingListDetail {
+                addButton
             }
-            // MARK: - Tab View
             
-            /// Main tab-based navigation
             TabView(selection: $selectedTab) {
-                NavigationStack {
-                    ListsView(isShowingListDetail: $isShowingListDetail)
-                        .onChange(of: selectedTab) { _ in
-                            isShowingListDetail = false
-                        }
-                        .toolbar(selectedTab == 0 && isShowingListDetail ? .hidden : .visible, for: .tabBar)
-                        .toolbar {
-                            // Delete All button (if there are lists)
-                            ToolbarItem(placement: .navigationBarTrailing) {
-                                if !dataStore.lists.isEmpty {
-                                    Button(role: .destructive) {
-                                        showingListsDeleteAllDialog = true
-                                    } label: {
-                                        Text("Delete All")
-                                            .foregroundColor(.red)
-                                    }
-                                }
-                            }
-                        }
-                        .confirmationDialog("Delete All Lists?", isPresented: $showingListsDeleteAllDialog, titleVisibility: .visible) {
-                            Button("Delete All", role: .destructive) {
-                                let moved = dataStore.lists.map { list -> MyList in
-                                    var l = list
-                                    l.isDeleted = true
-                                    l.deletedAt = Date()
-                                    return l
-                                }
-                                dataStore.deletedLists.append(contentsOf: moved)
-                                dataStore.lists.removeAll()
-                                dataStore.saveLists()
-                            }
-                            Button("Cancel", role: .cancel) {}
-                        } message: {
-                            Text("Are you sure you want to move all your lists to Deleted? This can be undone from the Deleted tab.")
-                        }
-                }
-                .tabItem {
-                    Label {
-                        Text("Lists")
-                            .foregroundStyle(selectedTab == 0 ? .primary : .secondary)
-                            .fontWeight(selectedTab == 0 ? .bold : .regular)
-                    } icon: {
-                        Image(systemName: "list.bullet")
-                            .foregroundStyle(selectedTab == 0 ? .primary : .secondary)
-                            .fontWeight(selectedTab == 0 ? .bold : .regular)
-                    }
-                }
-                .tag(0)
-                .badge(dataStore.lists.count)
+                listsTab
+                    .tabItem { tabLabel(title: "Lists", systemImage: "list.bullet", tag: 0) }
+                    .tag(0)
+                    .badge(dataStore.lists.count)
                 
-                // MARK: - Deleted Tab
+                deletedTab
+                    .tabItem { tabLabel(title: "Deleted", systemImage: "trash", tag: 1) }
+                    .tag(1)
+                    .badge(dataStore.deletedLists.count)
                 
-                NavigationStack {
-                    DeletedView()
-                }
-                .tabItem {
-                    Label {
-                        Text("Deleted")
-                            .foregroundStyle(selectedTab == 1 ? .primary : .secondary)
-                            .fontWeight(selectedTab == 1 ? .bold : .regular)
-                    } icon: {
-                        Image(systemName: "trash")
-                            .foregroundStyle(selectedTab == 1 ? .primary : .secondary)
-                            .fontWeight(selectedTab == 1 ? .bold : .regular)
-                    }
-                }
-                .tag(1)
-                .badge(dataStore.deletedLists.count)
+                statsTab
+                    .tabItem { tabLabel(title: "Stats", systemImage: "chart.bar.xaxis", tag: 2) }
+                    .tag(2)
                 
-                // MARK: - Stats Tab
-                
-                /// Displays the statistics view
-                NavigationStack {
-                    Text("Stats View")
-                        .font(.title)
-                }
-                .tabItem {
-                    /// Label for the Stats tab
-                    Label {
-                        Text("Stats")
-                            .foregroundStyle(selectedTab == 2 ? .primary : .secondary)
-                            .fontWeight(selectedTab == 2 ? .bold : .regular)
-                    } icon: {
-                        Image(systemName: "chart.bar.xaxis")
-                            .foregroundStyle(selectedTab == 2 ? .primary : .secondary)
-                            .fontWeight(selectedTab == 2 ? .bold : .regular)
-                    }
-                }
-                .tag(2)
-                
-                // MARK: - Profile Tab
-                
-                /// Displays the profile view
-                NavigationStack {
-                    ProfileView()
-                }
-                .tabItem {
-                    /// Label for the Profile tab
-                    Label {
-                        Text("Profile")
-                            .foregroundStyle(selectedTab == 3 ? .primary : .secondary)
-                            .fontWeight(selectedTab == 3 ? .bold : .regular)
-                    } icon: {
-                        Image(systemName: "person.crop.circle")
-                            .foregroundStyle(selectedTab == 3 ? .primary : .secondary)
-                            .fontWeight(selectedTab == 3 ? .bold : .regular)
-                    }
-                }
-                .tag(3)
+                profileTab
+                    .tabItem { tabLabel(title: "Profile", systemImage: "person.crop.circle", tag: 3) }
+                    .tag(3)
             }
         }
+        .alert("Enter List Name", isPresented: $showNewListDialog, actions: {
+            TextField("List Name", text: $newListName)
+            Button("Create") {
+                let trimmed = newListName.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !trimmed.isEmpty {
+                    let newList = MyList(name: trimmed, createdAt: Date())
+                    dataStore.addList(newList)
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                newListName = ""
+            }
+        }, message: {
+            Text("Please enter a name for your new list.")
+        })
     }
 }
 
 // MARK: - Preview
 
 #Preview {
-    ContentView()
-        .environmentObject(DataStore())
+    let dataStore = DataStore()
+    // Add some sample data for preview
+    let sampleList = MyList(
+        name: "Grocery List",
+        items: [
+            ItemRow(name: "Milk", isCompleted: false, createdAt: Date(), updatedAt: Date()),
+            ItemRow(name: "Eggs", isCompleted: true, createdAt: Date(), updatedAt: Date())
+        ],
+        isDeleted: false,
+        createdAt: Date(),
+        updatedAt: Date()
+    )
+    dataStore.lists = [sampleList]
+    
+    return ContentView()
+        .environmentObject(dataStore)
 }
 

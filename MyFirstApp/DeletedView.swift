@@ -1,3 +1,4 @@
+// Moved to Views/ directory as part of project restructuring.
 //
 //  DeletedView.swift
 //  MyFirstApp
@@ -7,6 +8,8 @@
 //  - Integrates with DataStore for data management
 
 import SwiftUI
+
+// Using the shared SearchBar component from Views/SearchBar.swift
 
 /// Displays a list of soft-deleted shopping lists with options to restore or permanently delete them
 /// - Note: Integrates with DataStore for managing deleted lists
@@ -21,64 +24,79 @@ struct DeletedView: View {
     @State private var showingDeleteAllDialog = false
     @State private var listToRestore: MyList? = nil
     
+    @State private var searchText = ""
+    
+    private var filteredDeletedLists: [MyList] {
+        if searchText.isEmpty {
+            return dataStore.deletedLists
+        } else {
+            return dataStore.deletedLists.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+        }
+    }
+    
+    // Get the items directly from the list
+    private func getItems(from list: MyList) -> [ItemRow] {
+        return list.items
+    }
+
+    /// Builds a DeletedListRow for the given list
+    private func buildDeletedListRow(for list: MyList) -> some View {
+        let items = getItems(from: list)
+        let totalCount = items.count
+        let purchasedCount = items.filter { $0.isCompleted }.count
+        return DeletedListRow(
+            list: list,
+            items: items,
+            totalCount: totalCount,
+            purchasedCount: purchasedCount,
+            onDelete: {
+                listToDelete = list
+                showingDeleteAlert = true
+            },
+            onRestore: {
+                listToRestore = list
+            }
+        )
+    }
+    
     // MARK: - Body
     
     /// Main view content
     var body: some View {
         List {
-            // Show empty state if no deleted lists exist
-            if dataStore.deletedLists.isEmpty {
-                VStack(spacing: 8) {
+            SearchBar(text: $searchText)
+                .padding(.horizontal)
+            
+            // Show empty state if no filtered deleted lists exist
+            if filteredDeletedLists.isEmpty {
+                VStack(alignment: .center, spacing: 10) {
+                    Spacer()
                     Image(systemName: "trash")
-                        .font(.system(size: 48))
+                        .font(.system(size: 40))
                         .foregroundColor(.secondary)
-                    Text("No Deleted Lists")
-                        .font(.title3)
-                        .fontWeight(.semibold)
-                    Text("Lists you delete will appear here for recovery or permanent deletion")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 32)
+                    Text(searchText.isEmpty ? "No Deleted Lists" : "No Matching Deleted Lists")
+                        .font(.headline)
+                    if searchText.isEmpty {
+                        Text("Lists you delete will appear here for recovery or permanent deletion")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
+                    } else {
+                        Text("No deleted lists found for \"\(searchText)\"")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
+                    }
+                    Spacer()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding()
-                .listRowBackground(Color.clear)
+                //.listRowBackground(Color.clear)
             } else {
                 // Display each deleted list with restore/delete options
-                ForEach(dataStore.deletedLists) { list in
-                    HStack(alignment: .center) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(list.name)
-                                .font(.headline)
-                                .strikethrough()
-                            if let deletedAt = list.deletedAt {
-                                Text("Deleted \(deletedAt.formatted(date: .abbreviated, time: .shortened))")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        Spacer()
-                        
-                        Menu {
-                            Button(role: .destructive) {
-                                listToDelete = list
-                                showingDeleteAlert = true
-                            } label: {
-                                Label("Delete Permanently", systemImage: "trash")
-                            }
-                            
-                            Button {
-                                listToRestore = list
-                            } label: {
-                                Label("Restore", systemImage: "arrow.uturn.backward")
-                            }
-                        } label: {
-                            Image(systemName: "ellipsis.circle")
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    .padding(.vertical, 6)
+                ForEach(filteredDeletedLists) { list in
+                    buildDeletedListRow(for: list)
                 }
             }
         }
@@ -90,6 +108,7 @@ struct DeletedView: View {
             Button("Delete", role: .destructive) {
                 if let list = listToDelete {
                     withAnimation {
+                        // Permanently delete the list
                         dataStore.permanentDelete(list)
                     }
                 }
@@ -99,9 +118,12 @@ struct DeletedView: View {
         }
         .alert("Restore List?", isPresented: Binding<Bool>(get: { listToRestore != nil }, set: { if !$0 { listToRestore = nil } })) {
             Button("Restore", role: .none) {
-                if let list = listToRestore {
+                if var list = listToRestore {
                     withAnimation {
-                        dataStore.restoreList(list)
+                        // Restore the list by marking it as not deleted
+                        list.isDeleted = false
+                        list.updatedAt = Date()
+                        dataStore.updateList(list)
                     }
                     listToRestore = nil
                 }
@@ -133,7 +155,9 @@ struct DeletedView: View {
         }
         .confirmationDialog("Delete All Deleted Lists?", isPresented: $showingDeleteAllDialog, titleVisibility: .visible) {
             Button("Delete All", role: .destructive) {
-                for list in dataStore.deletedLists {
+                // Permanently delete all deleted lists
+                let deletedLists = dataStore.lists.filter { $0.isDeleted }
+                for list in deletedLists {
                     dataStore.permanentDelete(list)
                 }
             }
@@ -144,14 +168,65 @@ struct DeletedView: View {
     }
 }
 
+private struct DeletedListRow: View {
+    let list: MyList
+    let items: [ItemRow]
+    let totalCount: Int
+    let purchasedCount: Int
+    let onDelete: () -> Void
+    let onRestore: () -> Void
+
+    var body: some View {
+        HStack(alignment: .center) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(list.name)
+                    .font(.headline)
+                    .strikethrough()
+                Text("Deleted \(list.updatedAt.formatted(date: .abbreviated, time: .shortened))")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            HStack(spacing: 4) {
+                Image(systemName: "cart.fill")
+                    .foregroundColor(totalCount > 0 && purchasedCount == totalCount ? .green : .secondary)
+                Text("\(purchasedCount) of \(totalCount)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            Menu {
+                Button(role: .destructive, action: onDelete) {
+                    Label("Delete Permanently", systemImage: "trash")
+                }
+                Button(action: onRestore) {
+                    Label("Restore", systemImage: "arrow.uturn.backward")
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle")
+                    .foregroundColor(.secondary)
+            }
+        }
+        .padding(.vertical, 6)
+    }
+}
+
 // MARK: - Preview
 
 #Preview {
     let dataStore = DataStore()
-    dataStore.deletedLists = [
-        MyList(name: "Old Grocery List", created: Date().addingTimeInterval(-86400 * 7), isDeleted: true, deletedAt: Date().addingTimeInterval(-86400 * 2)),
-        MyList(name: "Work Tasks (Old)", created: Date().addingTimeInterval(-86400 * 14), isDeleted: true, deletedAt: Date().addingTimeInterval(-86400 * 5))
-    ]
+    // Add some sample deleted lists for preview
+    let deletedList = MyList(
+        name: "Old Grocery List",
+        items: [
+            ItemRow(name: "Milk", isCompleted: true, createdAt: Date(), updatedAt: Date()),
+            ItemRow(name: "Eggs", isCompleted: true, createdAt: Date(), updatedAt: Date())
+        ],
+        isDeleted: true,
+        createdAt: Date().addingTimeInterval(-86400 * 7), // 7 days ago
+        updatedAt: Date().addingTimeInterval(-86400 * 2)  // 2 days ago
+    )
+    dataStore.lists = [deletedList]
+    
     return DeletedView()
         .environmentObject(dataStore)
 }
