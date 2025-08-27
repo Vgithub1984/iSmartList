@@ -27,11 +27,13 @@ struct DeletedView: View {
     @State private var searchText = ""
     
     private var filteredDeletedLists: [MyList] {
+        let filtered: [MyList]
         if searchText.isEmpty {
-            return dataStore.deletedLists
+            filtered = dataStore.deletedLists
         } else {
-            return dataStore.deletedLists.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+            filtered = dataStore.deletedLists.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
         }
+        return filtered.sorted { $0.updatedAt > $1.updatedAt }
     }
     
     // Get the items directly from the list

@@ -25,14 +25,15 @@ struct ListsView: View {
     
     /// The filtered lists based on search text
     private var filteredLists: [MyList] {
-        let activeLists = dataStore.activeLists
+        let filtered: [MyList]
         if searchText.isEmpty {
-            return activeLists
+            filtered = dataStore.lists.filter { !$0.isDeleted }
         } else {
-            return activeLists.filter {
-                $0.name.localizedCaseInsensitiveContains(searchText)
+            filtered = dataStore.lists.filter {
+                $0.name.localizedCaseInsensitiveContains(searchText) && !$0.isDeleted
             }
         }
+        return filtered.sorted { $0.updatedAt > $1.updatedAt }
     }
     
     @State private var showDeleteAlert = false
@@ -105,33 +106,31 @@ struct ListsView: View {
     }
     
     private func listRow(for list: MyList, at index: Int) -> some View {
-        Group {
-            if let listIndex = dataStore.lists.firstIndex(where: { $0.id == list.id }) {
-                NavigationLink(destination: listDetailView(for: list, at: listIndex)) {
-                    ListRowView(list: list, onDelete: {
-                        listToDelete = list
-                        showDeleteAlert = true
-                    })
+        let listBinding = Binding<MyList>(
+            get: { list },
+            set: { updatedList in
+                if let index = dataStore.lists.firstIndex(where: { $0.id == updatedList.id }) {
+                    dataStore.lists[index] = updatedList
                 }
             }
-        }
-    }
-    
-    private func listDetailView(for list: MyList, at index: Int) -> some View {
-        // Find the index of the list in the data store to ensure we're working with the correct reference
-        if let listIndex = dataStore.lists.firstIndex(where: { $0.id == list.id }) {
-            return AnyView(
-                ListDetailView(list: $dataStore.lists[listIndex])
+        )
+        
+        return ListRowView(list: list, onDelete: {
+            listToDelete = list
+            showDeleteAlert = true
+        })
+        .background(
+            NavigationLink(
+                destination: ListDetailView(list: listBinding)
                     .onAppear { isShowingListDetail = true }
                     .onDisappear {
                         isShowingListDetail = false
                         dataStore.save()
-                    }
+                    },
+                label: { EmptyView() }
             )
-        } else {
-            // Fallback in case the list isn't found (shouldn't happen in normal operation)
-            return AnyView(Text("List not found"))
-        }
+            .opacity(0) // Hide the default navigation link styling
+        )
     }
     
     // MARK: - Main View

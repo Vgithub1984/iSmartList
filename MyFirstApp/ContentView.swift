@@ -134,72 +134,69 @@ struct ContentView: View {
         }
     }
     
-    private var newListAlert: some View {
-        ZStack {
-            // Blurred background that dismisses the alert when tapped
-            Color.black.opacity(0.3)
-                .edgesIgnoringSafeArea(.all)
-                .onTapGesture {
-                    withAnimation {
+    private var newListSheet: some View {
+        NavigationView {
+            Form {
+                Section {
+                    TextField("Enter List Name", text: $newListName, onCommit: {
+                        if !newListName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            let newList = MyList(name: newListName.trimmingCharacters(in: .whitespacesAndNewlines))
+                            dataStore.addList(newList)
+                            newListName = ""
+                            showingNewListDialog = false
+                        }
+                    })
+                    .focused($isTextFieldFocused)
+                    .onAppear {
+                        // Set focus immediately when the view appears
+                        isTextFieldFocused = true
+                    }
+                    .submitLabel(.done)
+                } header: {
+                    Text("")
+                } footer: {
+                    Text("Enter a name for your new list")
+                }
+            }
+            .onAppear {
+                // Ensure focus is set when the sheet appears
+                DispatchQueue.main.async {
+                    isTextFieldFocused = true
+                }
+            }
+            .onDisappear {
+                // Reset the text field when the sheet is dismissed
+                newListName = ""
+            }
+            .navigationTitle("New List")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
                         showingNewListDialog = false
                     }
                 }
-            
-            VStack(spacing: 20) {
-                Text("Create New List")
-                    .font(.headline)
-                    .padding(.top)
                 
-                TextField("Enter List Name", text: $newListName)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding(.horizontal)
-                    .focused($isTextFieldFocused)
-                    .onAppear {
-                        // Focus the text field when the alert appears
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                            isTextFieldFocused = true
-                        }
-                    }
-                
-                HStack(spacing: 20) {
-                    Button("Cancel") {
-                        withAnimation {
-                            showingNewListDialog = false
-                        }
-                    }
-                    .foregroundColor(.accentColor)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color(.systemGray6))
-                    .cornerRadius(10)
-                    
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Create") {
                         if !newListName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                             let newList = MyList(name: newListName.trimmingCharacters(in: .whitespacesAndNewlines))
                             dataStore.addList(newList)
                             newListName = ""
                         }
-                        withAnimation {
-                            showingNewListDialog = false
-                        }
+                        showingNewListDialog = false
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.accentColor)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
+                    .disabled(newListName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
-                .padding(.horizontal)
-                .padding(.bottom)
             }
-            .frame(width: 300)
-            .background(Color(.systemBackground))
-            .cornerRadius(15)
-            .shadow(radius: 10)
-            .transition(.scale)
-            .zIndex(1) // Ensure it's above the tab bar
         }
-        .ignoresSafeArea()
+        // Allow swipe-to-dismiss with state cleanup
+        .onChange(of: showingNewListDialog) { isPresented in
+            if !isPresented {
+                // Reset the text field when dismissed
+                newListName = ""
+            }
+        }
     }
     
     // MARK: - Main View
@@ -231,11 +228,9 @@ struct ContentView: View {
             if selectedTab == 0 && !isShowingListDetail {
                 addButton
             }
-            
-            // Custom alert overlay
-            if showingNewListDialog {
-                newListAlert
-            }
+        }
+        .sheet(isPresented: $showingNewListDialog) {
+            newListSheet
         }
         .ignoresSafeArea(.keyboard)
     }
