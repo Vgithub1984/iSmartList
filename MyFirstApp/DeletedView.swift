@@ -64,35 +64,35 @@ struct DeletedView: View {
     /// Main view content
     var body: some View {
         List {
-            SearchBar(text: $searchText)
+            /*SearchBar(text: $searchText)
                 .padding(.horizontal)
+             */
             
             // Show empty state if no filtered deleted lists exist
             if filteredDeletedLists.isEmpty {
-                VStack(alignment: .center, spacing: 10) {
+                VStack(alignment: .center, spacing: 20) {
                     Spacer()
-                    Image(systemName: "trash")
-                        .font(.system(size: 40))
-                        .foregroundColor(.secondary)
-                    Text(searchText.isEmpty ? "No Deleted Lists" : "No Matching Deleted Lists")
-                        .font(.headline)
-                    if searchText.isEmpty {
-                        Text("Lists you delete will appear here for recovery or permanent deletion")
-                            .font(.subheadline)
+                    
+                    VStack(spacing: 20) {
+                        Image(systemName: "trash")
+                            .font(.system(size: 40))
                             .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 32)
-                    } else {
-                        Text("No deleted lists found for \"\(searchText)\"")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 32)
+                        
+                        VStack(spacing: 8) {
+                            Text("No Deleted Lists")
+                                .font(.headline)
+                            
+                            Text("Deleted lists will appear here")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
+                        }
                     }
+                    
                     Spacer()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                //.listRowBackground(Color.clear)
             } else {
                 // Display each deleted list with restore/delete options
                 ForEach(filteredDeletedLists) { list in
@@ -142,7 +142,7 @@ struct DeletedView: View {
         // MARK: - Toolbar
         .toolbar {
             // Show Delete All button only when there are deleted lists
-            if !dataStore.deletedLists.isEmpty {
+            if !filteredDeletedLists.isEmpty {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(role: .destructive) {
                         showingDeleteAllDialog = true
@@ -227,6 +227,8 @@ private struct DeletedListRow: View {
     )
     dataStore.lists = [deletedList]
     
-    return DeletedView()
-        .environmentObject(dataStore)
+    return NavigationStack {
+        DeletedView()
+    }
+    .environmentObject(dataStore)
 }

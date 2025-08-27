@@ -1,5 +1,24 @@
 # MyFirstApp - Technical Documentation
 
+## Version History
+
+### v1.1 (2025-08-26)
+- **Version**: 1.1
+- **Build**: 2
+- **Changes**:
+  - Updated project version to 1.1
+  - Incremented build number to 2
+  - Added version history documentation
+
+### v1.0 (Initial Release)
+- **Version**: 1.0
+- **Build**: 1
+- **Changes**:
+  - Initial release with core shopping list functionality
+  - Basic CRUD operations for lists and items
+  - UserDefaults-based persistence
+
+
 ## Table of Contents
 1. [Architecture Overview](#architecture-overview)
 2. [Data Model](#data-model)

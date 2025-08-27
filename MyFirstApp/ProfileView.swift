@@ -291,7 +291,7 @@ struct ProfileView: View {
             Section("STATISTICS") {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("\(dataStore.lists.count)")
+                        Text("\(dataStore.lists.filter { !$0.isDeleted }.count)")
                             .font(.headline)
                         Text("Active Lists")
                             .font(.caption)
@@ -302,7 +302,7 @@ struct ProfileView: View {
                     Divider()
                     
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("\(dataStore.deletedLists.count)")
+                        Text("\(dataStore.lists.filter { $0.isDeleted }.count)")
                             .font(.headline)
                         Text("Deleted")
                             .font(.caption)

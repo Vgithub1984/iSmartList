@@ -1,5 +1,14 @@
-// Moved to Supporting/ directory as part of project restructuring.
 # MyFirstApp - Shopping List Manager
+
+## 📋 Version History
+
+### v1.1 (2025-08-26)
+- Updated project version to 1.1
+- Incremented build number to 2
+- Added version history documentation
+
+### v1.0 (Initial Release)
+- Initial release with core shopping list functionality
 
 A modern, intuitive iOS application for managing shopping lists with a clean and user-friendly interface, built with SwiftUI.
 

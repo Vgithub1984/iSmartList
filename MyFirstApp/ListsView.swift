@@ -48,22 +48,46 @@ struct ListsView: View {
     }
     
     private var emptyStateView: some View {
-        VStack(alignment: .center, spacing: 10) {
+        VStack(alignment: .center, spacing: 16) {
             Spacer()
-            Image(systemName: "list.bullet")
-                .font(.system(size: 40))
-                .foregroundColor(.secondary)
-                .padding(.bottom, 8)
             
-            Text(emptyStateTitle)
-                .font(.headline)
+            VStack(spacing: 20) {
+                Image(systemName: "list.bullet")
+                    .font(.system(size: 40))
+                    .foregroundColor(.secondary)
+                
+                VStack(spacing: 8) {
+                    Text(emptyStateTitle)
+                        .font(.headline)
+                    
+                    Text(emptyStateMessage)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                }
+            }
             
-            Text(emptyStateMessage)
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
-            
+            if searchText.isEmpty {
+                VStack(spacing: 5) {
+                    Text("Important Gestures:")
+                        .font(.headline)
+                        .padding(.top, 15)
+                    
+                    HStack(spacing: 12) {
+                        Image(systemName: "hand.point.left.fill")
+                            .foregroundColor(.secondary)
+                        Text("Swipe Left or Right to delete the list")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Image(systemName: "hand.point.right.fill")
+                            .foregroundColor(.secondary)
+                    }
+                    
+                }
+                .opacity(0.8)
+            }
+           
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -77,6 +101,7 @@ struct ListsView: View {
         searchText.isEmpty 
             ? "Tap the + button to create your first list"
             : "No lists found for \"\(searchText)\""
+      
     }
     
     private func listRow(for list: MyList, at index: Int) -> some View {
@@ -114,7 +139,7 @@ struct ListsView: View {
     /// Main view content
     var body: some View {
         List {
-            searchBar
+            //searchBar
             
             if filteredLists.isEmpty {
                 emptyStateView
@@ -191,9 +216,9 @@ struct ListRowView: View {
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 8)
-        .background(Color(.systemBackground))
-        .cornerRadius(8)
-        .contentShape(Rectangle())
+        //.background(Color(.systemBackground))
+        //.cornerRadius(8)
+        //.contentShape(Rectangle())
         // Swipe from right: Delete action (red, full swipe enabled)
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(role: .destructive) {
