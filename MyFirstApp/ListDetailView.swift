@@ -2,83 +2,125 @@
 //  ListDetailView.swift
 //  MyFirstApp
 //
-//  Displays the details of a shopping list including all items
-//  - Allows adding, marking, and removing items
-//  - Shows completion progress
-//  - Integrates with DataStore for data persistence
+//  This file implements the detailed view for a single shopping list.
+//  It provides a complete interface for managing list items and tracking progress.
+//
+//  Key Features:
+//  - Displays all items in a scrollable list
+//  - Tracks and visualizes completion progress
+//  - Supports adding, editing, and removing items
+//  - Prevents duplicate items
+//  - Auto-saves changes to DataStore
+//  - Responsive design for all device sizes
 
 import SwiftUI
 import UIKit
 import Combine
 
-/// Displays and manages the contents of a single shopping list
-/// - Note: Handles all CRUD operations for list items and integrates with DataStore
+/// Displays and manages the contents of a single shopping list with full CRUD operations.
+///
+/// This view provides a detailed interface for interacting with a shopping list, including:
+/// - Viewing all items with their completion status
+/// - Adding new items with duplicate prevention
+/// - Toggling item completion
+/// - Deleting items
+/// - Tracking overall list completion progress
+///
+/// - Note: Automatically persists changes to the shared `DataStore` for data persistence.
 struct ListDetailView: View {
-    /// Reference to the shared data store for managing list data
+    // MARK: - Environment
+    
+    /// The shared data store containing all lists and their items.
+    /// Automatically updates the view when the data changes.
     @EnvironmentObject private var dataStore: DataStore
-    /// Binding to the current list being viewed/edited
+    
+    // MARK: - Properties
+    
+    /// Binding to the current list being viewed/edited.
+    /// Updates both locally and in the data store when modified.
     @Binding var list: MyList
-    /// Environment value to dismiss the current view
+    
+    /// Environment value to dismiss the current view when needed.
     @Environment(\.dismiss) private var dismiss
-    /// Text input for adding new items
+    
+    // MARK: - State
+    
+    /// The current text input for adding new items.
     @State private var inputText: String = ""
-    /// Array of items in the current list
+    
+    /// Local copy of the list's items for efficient UI updates.
     @State private var items: [ItemRow] = []
-    /// Controls the focus state of the text input field
+    
+    /// Controls the keyboard focus state of the text input field.
     @FocusState private var isInputFocused: Bool
-    /// Controls the visibility of the duplicate item alert
+    
+    /// Controls the visibility of the duplicate item alert.
     @State private var showDuplicateAlert = false
-    /// Name of the duplicate item to show in the alert
+    
+    /// The name of the duplicate item to display in the alert.
     @State private var duplicateItemName = ""
     
-    /// Number of completed items in the list
-    private var purchasedCount: Int { items.filter { $0.isCompleted }.count }
-    /// Total number of items in the list
-    private var totalCount: Int { items.count }
-    /// Progress value (0.0 to 1.0) representing completion percentage
-    private var progress: Double { totalCount == 0 ? 0.0 : Double(purchasedCount) / Double(totalCount) }
+    // MARK: - Computed Properties
     
-    /// Initializes the view with required dependencies
-    /// - Parameters:
-    ///   - list: Binding to the list being viewed/edited
+    /// The number of completed items in the list.
+    private var purchasedCount: Int { items.filter { $0.isCompleted }.count }
+    
+    /// The total number of items in the list.
+    private var totalCount: Int { items.count }
+    
+    /// The completion progress of the list, ranging from 0.0 to 1.0.
+    /// Returns 0.0 if the list is empty.
+    private var progress: Double { 
+        totalCount == 0 ? 0.0 : Double(purchasedCount) / Double(totalCount) 
+    }
+    
+    // MARK: - Initialization
+    
+    /// Creates a new instance of the list detail view.
+    /// - Parameter list: A binding to the `MyList` object to be displayed and edited.
     init(list: Binding<MyList>) {
         self._list = list
-        // Initialize items from the list's items array
+        // Initialize the local items state with the list's current items
         self._items = State(initialValue: list.wrappedValue.items)
     }
     
-    /// Called when the view appears to ensure we have the latest data
+    // MARK: - Private Methods
+    
+    /// Synchronizes the local items with the latest data from the data store.
+    /// Called when the view appears to ensure we have the most up-to-date data.
     private func onAppear() {
-        // Update items from the data store
         if let index = dataStore.lists.firstIndex(where: { $0.id == list.id }) {
             self.items = dataStore.lists[index].items
         }
     }
     
-    /// Updates the items in the current list
+    /// Updates the items in the current list and persists changes to the data store.
+    /// - Note: This method is called after any modification to the items array.
     private func updateListItems() {
         guard let index = dataStore.lists.firstIndex(where: { $0.id == list.id }) else { return }
         var updatedList = dataStore.lists[index]
         updatedList.items = items
         updatedList.updatedAt = Date()
         dataStore.updateList(updatedList)
-        // Update the local list binding
+        // Update the local list binding to ensure consistency
         list = updatedList
     }
     
-    /// Adds a new item to the list if it doesn't already exist
-    /// - Parameter name: The name of the item to add
+    /// Adds a new item to the list if it doesn't already exist.
+    /// - Parameter name: The name of the item to add.
+    /// - Note: Performs case-insensitive duplicate checking and shows an alert if a duplicate is found.
     private func addItem(name: String) {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else { return }
         
-        // Check for duplicate items (case insensitive)
+        // Check for duplicate items (case insensitive comparison)
         if items.contains(where: { $0.name.lowercased() == trimmedName.lowercased() }) {
             duplicateItemName = trimmedName
             showDuplicateAlert = true
             return
         }
         
+        // Add the new item with animation
         withAnimation {
             let newItem = ItemRow(name: trimmedName)
             items.append(newItem)
@@ -88,7 +130,9 @@ struct ListDetailView: View {
         }
     }
     
-    /// Toggles the completion state of an item
+    /// Toggles the completion state of the specified item.
+    /// - Parameter item: The item whose completion state should be toggled.
+    /// - Note: Automatically persists the change to the data store.
     private func toggleItem(_ item: ItemRow) {
         if let index = items.firstIndex(where: { $0.id == item.id }) {
             items[index].isCompleted.toggle()
@@ -96,7 +140,9 @@ struct ListDetailView: View {
         }
     }
     
-    /// Deletes items at the specified offsets
+    /// Deletes items at the specified index set.
+    /// - Parameter offsets: The indices of the items to delete.
+    /// - Note: Automatically persists the change to the data store.
     private func deleteItems(offsets: IndexSet) {
         items.remove(atOffsets: offsets)
         updateListItems()
@@ -104,7 +150,6 @@ struct ListDetailView: View {
     
     // MARK: - Body
     
-    /// Main view content
     var body: some View {
         VStack(spacing: 0) {
             // Navigation bar content will be added via .toolbar modifier
@@ -270,26 +315,77 @@ struct ListDetailView: View {
     
 }
 
-// MARK: - Preview
+// MARK: - Previews
 
-#Preview {
+#Preview("With Items") {
+    // Create a sample list with various items
     let sampleList = MyList(
-        name: "Sample List",
+        name: "Grocery Shopping",
         items: [
             ItemRow(name: "Milk", isCompleted: false, createdAt: Date(), updatedAt: Date()),
             ItemRow(name: "Eggs", isCompleted: true, createdAt: Date(), updatedAt: Date()),
-            ItemRow(name: "Bread", isCompleted: false, createdAt: Date(), updatedAt: Date())
+            ItemRow(name: "Bread", isCompleted: false, createdAt: Date(), updatedAt: Date()),
+            ItemRow(name: "Apples", isCompleted: false, createdAt: Date(), updatedAt: Date()),
+            ItemRow(name: "Chicken", isCompleted: true, createdAt: Date(), updatedAt: Date())
         ],
+        isDeleted: false,
+        createdAt: Date().addingTimeInterval(-86400 * 2), // 2 days ago
+        updatedAt: Date()
+    )
+    
+    // Set up the data store with the sample list
+    let dataStore = DataStore()
+    dataStore.lists = [sampleList]
+    
+    // Return the preview with navigation
+    return NavigationStack {
+        ListDetailView(list: .constant(sampleList))
+            .environmentObject(dataStore)
+    }
+}
+
+#Preview("Empty List") {
+    // Create an empty list
+    let emptyList = MyList(
+        name: "Empty Shopping List",
+        items: [],
         isDeleted: false,
         createdAt: Date(),
         updatedAt: Date()
     )
     
+    // Set up the data store with the empty list
     let dataStore = DataStore()
-    dataStore.lists = [sampleList]
+    dataStore.lists = [emptyList]
     
+    // Return the preview with navigation
     return NavigationStack {
-        ListDetailView(list: .constant(sampleList))
+        ListDetailView(list: .constant(emptyList))
+            .environmentObject(dataStore)
+    }
+}
+
+#Preview("Completed List") {
+    // Create a fully completed list
+    let completedList = MyList(
+        name: "Completed Shopping",
+        items: [
+            ItemRow(name: "Milk", isCompleted: true, createdAt: Date(), updatedAt: Date()),
+            ItemRow(name: "Eggs", isCompleted: true, createdAt: Date(), updatedAt: Date()),
+            ItemRow(name: "Bread", isCompleted: true, createdAt: Date(), updatedAt: Date())
+        ],
+        isDeleted: false,
+        createdAt: Date().addingTimeInterval(-86400), // 1 day ago
+        updatedAt: Date()
+    )
+    
+    // Set up the data store with the completed list
+    let dataStore = DataStore()
+    dataStore.lists = [completedList]
+    
+    // Return the preview with navigation
+    return NavigationStack {
+        ListDetailView(list: .constant(completedList))
             .environmentObject(dataStore)
     }
 }

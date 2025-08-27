@@ -13,13 +13,12 @@ iSmartList is a powerful and intuitive list management application that helps yo
 - **Responsive Design**: Works on all iOS devices
 
 ## Version
-**1.1.0** - August 26, 2025
+**1.1.1** - August 27, 2025
 
 ### What's New
-- Enhanced list creation with auto-focus and improved UI
-- Added visual feedback for list actions
-- Improved empty state messages with gesture hints
-- Optimized performance and bug fixes
+- Updated documentation and version consistency
+- Enhanced UI with consistent navigation styling
+- Improved version information display in the app
 
 ## Requirements
 - iOS 16.0+

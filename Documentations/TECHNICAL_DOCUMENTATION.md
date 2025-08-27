@@ -39,6 +39,11 @@ iSmartList follows the MVVM (Model-View-ViewModel) architecture pattern with the
 
 ## Recent Updates
 
+### Version 1.1.1 (August 27, 2025)
+- **Documentation**: Updated documentation and version consistency
+- **UI Improvements**: Enhanced navigation styling and version display
+- **Code Quality**: Refactored view components for better maintainability
+
 ### Version 1.1.0 (August 26, 2025)
 - **Enhanced List Creation**: Auto-focus on text field with improved UI
 - **Improved Empty States**: Added gesture hints and better visual feedback
