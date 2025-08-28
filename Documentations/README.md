@@ -1,24 +1,36 @@
-# iSmartList - List Management App
+# iSmartList - Smart List Management App
 
 ## Overview
-iSmartList is a powerful and intuitive list management application that helps you organize your tasks and lists efficiently. The app features a clean, modern UI with smooth animations and intuitive gestures.
+iSmartList is a powerful and intuitive list management application that helps you organize your tasks and lists efficiently. The app features a clean, modern UI with smooth animations, intuitive gestures, and comprehensive list management capabilities.
 
 ## Features
-- **List Management**: Create, edit, and delete lists
-- **Smart Organization**: Lists can be marked as active or deleted
+- **List Management**: Create, edit, and delete lists with ease
+- **Smart Organization**: Lists can be marked as active, completed, or deleted
 - **Search**: Quickly find lists using the search functionality
-- **Statistics**: View your list statistics in the Profile section
-- **Dark Mode**: Built-in dark mode support
-- **Gestures**: Swipe to delete or restore lists
-- **Responsive Design**: Works on all iOS devices
+- **Statistics**: View your list statistics and activity in the Profile section
+- **Dark/Light Mode**: Built-in theme support with automatic system detection
+- **Gestures**: Intuitive swipe actions for common tasks
+- **Responsive Design**: Optimized for all iOS devices
+- **Storage Management**: Monitor and manage your app's storage usage
+- **Account Management**: Secure user profile and settings
 
 ## Version
 **1.1.1** - August 27, 2025
 
 ### What's New
-- Updated documentation and version consistency
-- Enhanced UI with consistent navigation styling
-- Improved version information display in the app
+- **UI/UX Enhancements**:
+  - Consistent navigation styling across all views
+  - Improved version information display
+  - Enhanced empty state messages
+  - Better visual feedback for user actions
+- **Performance**:
+  - Optimized list rendering
+  - Improved state management
+  - Reduced memory footprint
+- **Documentation**:
+  - Updated technical documentation
+  - Improved code comments
+  - Better organization of project files
 
 ## Requirements
 - iOS 16.0+
