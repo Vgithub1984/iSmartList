@@ -18,6 +18,7 @@ struct StatsView: View {
     
     /// The shared data store containing all lists and items.
     @EnvironmentObject private var dataStore: DataStore
+    @Environment(\.colorScheme) private var colorScheme
     
     // MARK: - Computed Properties
     
@@ -85,141 +86,145 @@ struct StatsView: View {
     // MARK: - Body
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 15) {
-                
-                // MARK: - Total Lists Section
-                VStack(alignment: .leading, spacing: 16) {
-                    VStack(alignment: .center, spacing: 8) {
-                        HStack(spacing: 10) {
-                            Spacer()
-                            Text("\(totalListsInclusive) Total Lists")
-                                .font(.title2.bold())
-                            Spacer()
-                        }
-                    }
-                    .padding()
-                    .background(Color(.secondarySystemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-                .padding(.horizontal)
-                
-                
-                // MARK: - Stats Grid
-                LazyVGrid(columns: [
-                    GridItem(.flexible(), spacing: 16),
-                    GridItem(.flexible())
-                ], spacing: 10) {
-                    StatCard(
-                        title: "Zero Item Lists",
-                        value: "\(zeroItemLists)",
-                        icon: "list.number.badge.ellipsis",
-                        color: .gray
-                    )
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 15) {
                     
-                    StatCard(
-                        title: "Active Lists",
-                        value: "\(activeLists)",
-                        icon: "cart.fill",
-                        color: .accentColor
-                    )
-                    
-                    StatCard(
-                        title: "Completed Lists",
-                        value: "\(completedLists)",
-                        icon: "checkmark.circle.fill",
-                        color: .green
-                    )
-                    
-                    StatCard(
-                        title: "Deleted Lists",
-                        value: "\(deletedLists)",
-                        icon: "trash",
-                        color: .red
-                    )
-                    
-                    
-                }
-                .padding(.horizontal)
-                
-                
-                // MARK: - Total Lists Section
-                VStack(alignment: .leading, spacing: 16) {
-                    VStack(alignment: .center, spacing: 8) {
-                        HStack {
-                            Text("\(completedTasks) of \(totalTasks) Items Purchased in total.")
-                                .font(.subheadline)
-                            Spacer()
-                            Text("\(Int(completionRate * 100))%")
-                                .font(.title3.bold())
-                                .foregroundColor(.accentColor)
-                        }
-                        ProgressView(value: completionRate)
-                            .tint(.accentColor)
-                            .scaleEffect(x: 1, y: 1.5, anchor: .center)
-                    }
-                    .padding()
-                    .background(Color(.secondarySystemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-                .padding(.horizontal)
-                
-              
-                Spacer()
-                
-                // MARK: - Recent Activity
-                if let recentList = mostRecentList {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Recently Updated")
-                            .font(.headline)
-                            .foregroundColor(.secondary)
-                        
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(recentList.name)
-                                    .font(.headline)
-                                
-                                if !recentList.items.isEmpty {
-                                    Text("\(recentList.items.filter { $0.isCompleted }.count) of \(recentList.items.count) completed")
-                                        .font(.subheadline)
-                                        .foregroundColor(.secondary)
-                                }
-                                
-                                Text("Updated \(recentList.updatedAt.formatted(.relative(presentation: .named)))")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                    // MARK: - Total Lists Section
+                    VStack(alignment: .leading, spacing: 16) {
+                        VStack(alignment: .center, spacing: 8) {
+                            HStack(spacing: 10) {
+                                Spacer()
+                                Text("\(totalListsInclusive) Total Lists")
+                                    .font(.title2.bold())
+                                Spacer()
                             }
-                            
-                            Spacer()
-                            
-                            Image(systemName: "arrow.right.circle.fill")
-                                .font(.title2)
-                                .foregroundColor(.accentColor)
                         }
                         .padding()
                         .background(Color(.secondarySystemBackground))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
                     .padding(.horizontal)
+                    
+                    
+                    // MARK: - Stats Grid
+                    LazyVGrid(columns: [
+                        GridItem(.flexible(), spacing: 16),
+                        GridItem(.flexible())
+                    ], spacing: 10) {
+                        StatCard(
+                            title: "Zero Item Lists",
+                            value: "\(zeroItemLists)",
+                            icon: "list.number.badge.ellipsis",
+                            color: .gray
+                        )
+                        
+                        StatCard(
+                            title: "Active Lists",
+                            value: "\(activeLists)",
+                            icon: "cart.fill",
+                            color: .accentColor
+                        )
+                        
+                        StatCard(
+                            title: "Completed Lists",
+                            value: "\(completedLists)",
+                            icon: "checkmark.circle.fill",
+                            color: .green
+                        )
+                        
+                        StatCard(
+                            title: "Deleted Lists",
+                            value: "\(deletedLists)",
+                            icon: "trash",
+                            color: .red
+                        )
+                        
+                        
+                    }
+                    .padding(.horizontal)
+                    
+                    
+                    // MARK: - Total Lists Section
+                    VStack(alignment: .leading, spacing: 16) {
+                        VStack(alignment: .center, spacing: 8) {
+                            HStack {
+                                Text("\(completedTasks) of \(totalTasks) Items Purchased in total.")
+                                    .font(.subheadline)
+                                Spacer()
+                                Text("\(Int(completionRate * 100))%")
+                                    .font(.title3.bold())
+                                    .foregroundColor(.accentColor)
+                            }
+                            ProgressView(value: completionRate)
+                                .tint(.accentColor)
+                                .scaleEffect(x: 1, y: 1.5, anchor: .center)
+                        }
+                        .padding()
+                        .background(Color(.secondarySystemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .padding(.horizontal)
+                    
+                  
+                    Spacer()
+                    
+                    // MARK: - Recent Activity
+                    if let recentList = mostRecentList {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Recently Updated")
+                                .font(.headline)
+                                .foregroundColor(.secondary)
+                            
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(recentList.name)
+                                        .font(.headline)
+                                    
+                                    if !recentList.items.isEmpty {
+                                        Text("\(recentList.items.filter { $0.isCompleted }.count) of \(recentList.items.count) completed")
+                                            .font(.subheadline)
+                                            .foregroundColor(.secondary)
+                                    }
+                                    
+                                    Text("Updated \(recentList.updatedAt.formatted(.relative(presentation: .named)))")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: "arrow.right.circle.fill")
+                                    .font(.title2)
+                                    .foregroundColor(.accentColor)
+                            }
+                            .padding()
+                            .background(Color(.secondarySystemBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                        .padding(.horizontal)
+                    }
+                    
+                    // MARK: - Empty State
+                    if dataStore.lists.isEmpty {
+                        ContentUnavailableView(
+                            "No Data Yet",
+                            systemImage: "chart.bar.xaxis",
+                            description: Text("Create your first list to see statistics")
+                        )
+                        .padding(.top, 40)
+                    }
                 }
-                
-                // MARK: - Empty State
-                if dataStore.lists.isEmpty {
-                    ContentUnavailableView(
-                        "No Data Yet",
-                        systemImage: "chart.bar.xaxis",
-                        description: Text("Create your first list to see statistics")
-                    )
-                    .padding(.top, 40)
-                }
+                .padding(.vertical)
             }
-            .padding(.vertical)
+            .navigationTitle("Statistics")
+            .navigationBarTitleDisplayMode(.inline)
+            .refreshable {
+                // Refresh data if needed
+            }
         }
-        .navigationTitle("Statistics")
-        .navigationBarTitleDisplayMode(.inline)
-        .refreshable {
-            // Refresh data if needed
-        }
+        .toolbarBackgroundVisibility(.visible, for: .navigationBar)
+        .toolbarBackground(Color.toolbarColor(for: colorScheme), for: .navigationBar)
     }
 }
 

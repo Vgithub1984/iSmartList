@@ -28,6 +28,8 @@ struct ListsView: View {
     /// Automatically updates the view when the data changes.
     @EnvironmentObject private var dataStore: DataStore
     
+    @Environment(\.colorScheme) private var colorScheme
+    
     // MARK: - Properties
     
     /// Binding to track if the list detail view is currently shown.
@@ -189,6 +191,7 @@ struct ListsView: View {
         }
         // MARK: - View Modifiers
         .navigationTitle("Lists")
+        .navigationBarTitleDisplayMode(.inline)
         // Confirmation dialog for list deletion
         .alert("Delete List?", isPresented: $showDeleteAlert, presenting: listToDelete) { list in
             Button("Delete", role: .destructive) {
@@ -377,15 +380,19 @@ struct ListRowView: View {
         @EnvironmentObject var dataStore: DataStore
         
         var body: some View {
-            ListsView(isShowingListDetail: $isShowingDetail)
-                .environmentObject(dataStore)
+            NavigationStack {
+                ListsView(isShowingListDetail: $isShowingDetail)
+                    .environmentObject(dataStore)
+            }
+            .toolbarBackgroundVisibility(.visible, for: .navigationBar)
+            .toolbarBackground(Color.toolbarColor(for: colorScheme), for: .navigationBar)
         }
+        
+        @Environment(\.colorScheme) private var colorScheme
     }
     
-    return NavigationStack {
-        WrapperView()
-            .environmentObject(dataStore)
-    }
+    return WrapperView()
+        .environmentObject(dataStore)
 }
 
 #Preview("Empty State") {
@@ -397,14 +404,18 @@ struct ListRowView: View {
         @EnvironmentObject var dataStore: DataStore
         
         var body: some View {
-            ListsView(isShowingListDetail: $isShowingDetail)
-                .environmentObject(dataStore)
+            NavigationStack {
+                ListsView(isShowingListDetail: $isShowingDetail)
+                    .environmentObject(dataStore)
+            }
+            .toolbarBackgroundVisibility(.visible, for: .navigationBar)
+            .toolbarBackground(Color.toolbarColor(for: colorScheme), for: .navigationBar)
         }
+        
+        @Environment(\.colorScheme) private var colorScheme
     }
     
-    return NavigationStack {
-        WrapperView()
-            .environmentObject(dataStore)
-    }
+    return WrapperView()
+        .environmentObject(dataStore)
 }
 

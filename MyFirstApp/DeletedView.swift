@@ -30,6 +30,7 @@ struct DeletedView: View {
     /// The shared data store containing all lists, including deleted ones.
     /// Automatically updates the view when the data changes.
     @EnvironmentObject private var dataStore: DataStore
+    @Environment(\.colorScheme) private var colorScheme
     
     // MARK: - State
     
@@ -150,88 +151,92 @@ struct DeletedView: View {
     }
     
     var body: some View {
-        List {
-            // Search functionality (currently disabled but can be enabled)
-            /*SearchBar(text: $searchText)
-                .padding(.horizontal)
-             */
-            
-            // Show empty state if no deleted lists exist
-            if filteredDeletedLists.isEmpty {
-                emptyStateView
-            } else {
-                // Display each deleted list with restore/delete options
-                ForEach(filteredDeletedLists) { list in
-                    buildDeletedListRow(for: list)
+        NavigationStack {
+            List {
+                // Search functionality (currently disabled but can be enabled)
+                /*SearchBar(text: $searchText)
+                    .padding(.horizontal)
+                 */
+                
+                // Show empty state if no deleted lists exist
+                if filteredDeletedLists.isEmpty {
+                    emptyStateView
+                } else {
+                    // Display each deleted list with restore/delete options
+                    ForEach(filteredDeletedLists) { list in
+                        buildDeletedListRow(for: list)
+                    }
                 }
             }
-        }
-        // MARK: - View Modifiers
-        .navigationTitle("Trash")
-        .alert("Delete Permanently", isPresented: $showingDeleteAlert) {
-            Button("Cancel", role: .cancel) {}
-            Button("Delete", role: .destructive) {
-                if let list = listToDelete {
-                    withAnimation {
-                        // Permanently delete the list
+            .navigationTitle("Trash")
+            .navigationBarTitleDisplayMode(.inline)
+            .alert("Delete Permanently", isPresented: $showingDeleteAlert) {
+                Button("Cancel", role: .cancel) {}
+                Button("Delete", role: .destructive) {
+                    if let list = listToDelete {
+                        withAnimation {
+                            // Permanently delete the list
+                            dataStore.permanentDelete(list)
+                        }
+                    }
+                }
+            } message: {
+                Text("Are you sure you want to permanently delete this list? This action cannot be undone.")
+            }
+            .alert("Restore List?", 
+                   isPresented: Binding<Bool>(
+                    get: { listToRestore != nil }, 
+                    set: { if !$0 { listToRestore = nil } }
+                   )
+            ) {
+                Button("Restore", role: .none) {
+                    if let list = listToRestore {
+                        withAnimation {
+                            dataStore.restoreList(list)
+                        }
+                        listToRestore = nil
+                    }
+                }
+                Button("Cancel", role: .cancel) {
+                    listToRestore = nil
+                }
+            } message: {
+                if let list = listToRestore {
+                    Text("Are you sure you want to restore \"\(list.name)\" back to Lists section?")
+                }
+            }
+            .confirmationDialog(
+                "Delete All Deleted Lists?", 
+                isPresented: $showingDeleteAllDialog, 
+                titleVisibility: .visible
+            ) {
+                Button("Delete All", role: .destructive) {
+                    // Permanently delete all deleted lists
+                    let deletedLists = dataStore.deletedLists
+                    for list in deletedLists {
                         dataStore.permanentDelete(list)
                     }
                 }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Are you sure you want to permanently delete all deleted lists? This action cannot be undone.")
             }
-        } message: {
-            Text("Are you sure you want to permanently delete this list? This action cannot be undone.")
-        }
-        .alert("Restore List?", 
-               isPresented: Binding<Bool>(
-                get: { listToRestore != nil }, 
-                set: { if !$0 { listToRestore = nil } }
-               )
-        ) {
-            Button("Restore", role: .none) {
-                if let list = listToRestore {
-                    withAnimation {
-                        dataStore.restoreList(list)
-                    }
-                    listToRestore = nil
-                }
-            }
-            Button("Cancel", role: .cancel) {
-                listToRestore = nil
-            }
-        } message: {
-            if let list = listToRestore {
-                Text("Are you sure you want to restore \"\(list.name)\" back to Lists section?")
-            }
-        }
-        .confirmationDialog(
-            "Delete All Deleted Lists?", 
-            isPresented: $showingDeleteAllDialog, 
-            titleVisibility: .visible
-        ) {
-            Button("Delete All", role: .destructive) {
-                // Permanently delete all deleted lists
-                let deletedLists = dataStore.deletedLists
-                for list in deletedLists {
-                    dataStore.permanentDelete(list)
-                }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Are you sure you want to permanently delete all deleted lists? This action cannot be undone.")
-        }
-        .toolbar {
-            // Show Delete All button only when there are deleted lists
-            if !filteredDeletedLists.isEmpty {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(role: .destructive) {
-                        showingDeleteAllDialog = true
-                    } label: {
-                        Text("Delete All")
-                            .foregroundColor(.red)
+            .toolbar {
+                // Show Delete All button only when there are deleted lists
+                if !filteredDeletedLists.isEmpty {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button(role: .destructive) {
+                            showingDeleteAllDialog = true
+                        } label: {
+                            Text("Delete All")
+                                .foregroundColor(.red)
+                        }
                     }
                 }
             }
         }
+        .toolbarBackgroundVisibility(.visible, for: .navigationBar)
+        .toolbarBackground(Color.toolbarColor(for: colorScheme), for: .navigationBar)
     }
 }
 

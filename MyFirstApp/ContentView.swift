@@ -90,6 +90,8 @@ struct ContentView: View {
     /// Injected as an environment object for access throughout the view hierarchy.
     @EnvironmentObject private var dataStore: DataStore
     
+    @Environment(\.colorScheme) private var colorScheme
+    
     // MARK: - State
     
     /// The currently selected tab in the tab view.
@@ -208,6 +210,10 @@ struct ContentView: View {
                 } message: {
                     Text("Are you sure you want to move all your lists to Deleted? This can be undone from the Deleted tab.")
                 }
+                .navigationTitle("Lists")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbarBackgroundVisibility(.visible, for: .navigationBar)
+                .toolbarBackground(Color.toolbarColor(for: colorScheme), for: .navigationBar)
         }
     }
     
@@ -226,6 +232,10 @@ struct ContentView: View {
     private var deletedTab: some View {
         NavigationStack {
             DeletedView()
+                .navigationTitle("Trash")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbarBackgroundVisibility(.visible, for: .navigationBar)
+                .toolbarBackground(Color.toolbarColor(for: colorScheme), for: .navigationBar)
         }
     }
     
@@ -233,6 +243,10 @@ struct ContentView: View {
     private var statsTab: some View {
         NavigationStack {
             StatsView()
+                .navigationTitle("Statistics")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbarBackgroundVisibility(.visible, for: .navigationBar)
+                .toolbarBackground(Color.toolbarColor(for: colorScheme), for: .navigationBar)
         }
         .tabItem { tabLabel(title: "Stats", systemImage: "chart.bar", tag: 2) }
         .tag(2)
@@ -242,6 +256,10 @@ struct ContentView: View {
     private var profileTab: some View {
         NavigationStack {
             ProfileView()
+                .navigationTitle("Profile")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbarBackgroundVisibility(.visible, for: .navigationBar)
+                .toolbarBackground(Color.toolbarColor(for: colorScheme), for: .navigationBar)
         }
     }
     
@@ -417,3 +435,4 @@ struct ContentView: View {
     return ContentView()
         .environmentObject(dataStore)
 }
+

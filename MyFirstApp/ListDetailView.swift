@@ -33,6 +33,7 @@ struct ListDetailView: View {
     /// The shared data store containing all lists and their items.
     /// Automatically updates the view when the data changes.
     @EnvironmentObject private var dataStore: DataStore
+    @Environment(\.colorScheme) private var colorScheme
     
     // MARK: - Properties
     
@@ -311,6 +312,8 @@ struct ListDetailView: View {
         } message: {
             Text("An item named \"\(duplicateItemName)\" already exists in this list.")
         }
+        .toolbarBackgroundVisibility(.visible, for: .navigationBar)
+        .toolbarBackground(Color.toolbarColor(for: colorScheme), for: .navigationBar)
     }
     
 }
@@ -389,3 +392,4 @@ struct ListDetailView: View {
             .environmentObject(dataStore)
     }
 }
+
