@@ -1,5 +1,8 @@
 # Technical Documentation
 
+**Last Updated:** August 29, 2025 11:06 AM
+**Build:** 2025.08.29.1106
+
 ## Architecture
 
 iSmartList follows the MVVM (Model-View-ViewModel) architecture pattern with the following components:
@@ -43,11 +46,12 @@ iSmartList follows the MVVM (Model-View-ViewModel) architecture pattern with the
 - Thread-safe data access
 
 ### UI Components
+- Native iOS-style alerts and confirmations
 - Custom `SearchBar` with real-time filtering
 - Animated list transitions
 - Swipe actions for common tasks
-- Custom alerts and action sheets
 - Adaptive layout for different device sizes
+- Accessible interface with VoiceOver support
 - Dynamic type support
 - Accessibility features
 - Theming system with dark/light mode support

@@ -21,7 +21,7 @@ extension View {
 }
 
 private func appVersionString() -> String {
-    "v1.1.1 (1)"
+    "v1.2.0 (2025.08.29.1106)"
 }
 
 #if DEBUG
@@ -31,7 +31,7 @@ let buildDateString: String = {
     return formatter.string(from: Date())
 }()
 #else
-let buildDateString: String = "2025-08-27 16:58:00"
+let buildDateString: String = "2025-08-29 11:06:38"
 #endif
 
 // MARK: - Model
@@ -89,9 +89,7 @@ struct ProfileView: View {
             .formStyle(.grouped)
             .navigationTitle("Profile")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(Color.toolbarColor(for: colorScheme), for: .navigationBar)
-            .toolbarBackgroundVisibility(.visible, for: .navigationBar)
-            .alert("Sign Out", isPresented: $showLogoutAlert) {
+                        .alert("Sign Out", isPresented: $showLogoutAlert) {
                 Button("Cancel", role: .cancel) {}
                 Button("Sign Out", role: .destructive, action: signOut)
             } message: {
@@ -236,8 +234,6 @@ private struct AccountView: View {
         .formStyle(.grouped)
         .navigationTitle("User Account")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(Color.toolbarColor(for: colorScheme), for: .navigationBar)
-        .toolbarBackgroundVisibility(.visible, for: .navigationBar)
         .alert("Delete Account", isPresented: $showDeleteAccountAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {
@@ -340,8 +336,6 @@ private struct StorageViewScreen: View {
         }
         .navigationTitle("Storage & Privacy")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(Color.toolbarColor(for: colorScheme), for: .navigationBar)
-        .toolbarBackgroundVisibility(.visible, for: .navigationBar)
         .alert("Delete All Data", isPresented: $showDeleteAllDataAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {
@@ -457,8 +451,6 @@ private struct AboutView: View {
         }
         .navigationTitle("About")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(Color.toolbarColor(for: colorScheme), for: .navigationBar)
-        .toolbarBackgroundVisibility(.visible, for: .navigationBar)
         .sheet(isPresented: $showVersionSheet) {
             VersionInfoSheet()
         }
@@ -507,8 +499,7 @@ private struct ContactView: View {
         .formStyle(.grouped)
         .navigationTitle("Contact")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(Color.toolbarColor(for: colorScheme), for: .navigationBar)
-        .toolbarBackgroundVisibility(.visible, for: .navigationBar)
+        
     }
 }
 
@@ -549,8 +540,7 @@ private struct SettingsViewScreen: View {
         .formStyle(.grouped)
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(Color.toolbarColor(for: colorScheme), for: .navigationBar)
-        .toolbarBackgroundVisibility(.visible, for: .navigationBar)
+     
     }
 }
 
@@ -604,9 +594,7 @@ struct VersionInfoSheet: View {
             }
             .navigationTitle("Version Information")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(Color.toolbarColor(for: colorScheme), for: .navigationBar)
-            .toolbarBackgroundVisibility(.visible, for: .navigationBar)
-            .toolbar {
+                        .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
                         dismiss()

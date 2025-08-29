@@ -45,9 +45,50 @@ MyFirstApp/
 
 ### Environment Setup
 1. Clone the repository
-2. Install dependencies: `brew install swiftlint`
+2. Install dependencies:
+   ```bash
+   brew install swiftlint
+   ```
 3. Open `MyFirstApp.xcodeproj`
 4. Build the project (⌘B)
+
+## Development Practices
+
+### Code Style (Updated: August 2025)
+- Follow [Swift API Design Guidelines](https://swift.org/documentation/api-design-guidelines/)
+- Enforce style with SwiftLint (v0.55+)
+- Maximum line length: 100 characters
+- Use `// MARK: -` for logical code organization
+- Follow strict access control:
+  - Default to `private`
+  - Use `internal` only when necessary
+  - Document all `public` APIs
+- Prefer value types (structs, enums) for models
+- Use `@MainActor` for UI-related code
+- Adopt Swift Concurrency (async/await)
+
+### Testing
+- **Unit Tests**:
+  - Test all ViewModels and business logic
+  - Use `XCTest` with `XCTestExpectation` for async code
+  - Test state transitions and side effects
+
+- **UI Tests**:
+  - Test critical user journeys
+  - Use accessibility identifiers for UI elements
+  - Implement Page Object pattern
+
+- **Performance Testing**:
+  - Profile with Instruments regularly
+  - Set baseline performance metrics
+  - Monitor memory usage and leaks
+
+### Accessibility
+- Support Dynamic Type (up to XXXL)
+- Implement VoiceOver support
+- Ensure sufficient color contrast (4.5:1 minimum)
+- Support Voice Control
+- Test with reduced motion enabled
 5. Run tests (⌘U)
 6. Run the app (⌘R)
 

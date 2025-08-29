@@ -15,22 +15,22 @@ iSmartList is a powerful and intuitive list management application that helps yo
 - **Account Management**: Secure user profile and settings
 
 ## Version
-**1.1.1** - August 27, 2025
+**1.2.0** - August 29, 2025 (Build: 2025.08.29.1106)
 
 ### What's New
 - **UI/UX Enhancements**:
-  - Consistent navigation styling across all views
-  - Improved version information display
-  - Enhanced empty state messages
-  - Better visual feedback for user actions
+  - Native iOS-style alerts and confirmations
+  - Improved error handling with visual feedback
+  - Enhanced user input validation
+  - Smoother animations and transitions
 - **Performance**:
-  - Optimized list rendering
-  - Improved state management
-  - Reduced memory footprint
-- **Documentation**:
-  - Updated technical documentation
-  - Improved code comments
-  - Better organization of project files
+  - Optimized alert system
+  - Reduced UI blocking operations
+  - Improved memory management
+- **Accessibility**:
+  - Better VoiceOver support
+  - Improved dynamic type support
+  - Enhanced color contrast
 
 ## Requirements
 - iOS 16.0+
