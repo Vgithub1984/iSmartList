@@ -2,6 +2,14 @@
 
 ## 📋 Version History
 
+### v1.2.0 (2025-08-29, build 2025.08.29.1106)
+- Updated project version to 1.2.0, build number to 2025.08.29.1106
+- Improved Deleted tab: better empty state, mutually exclusive status for deleted lists, and batch delete
+- Enhanced Statistics tab: more granular stats and progress
+- About section now shows detailed version/build/timestamp information
+- Improved Profile and Storage views layout
+- UI refinements and bug fixes across tabs
+
 ### v1.1 (2025-08-26)
 - Updated project version to 1.1
 - Incremented build number to 2

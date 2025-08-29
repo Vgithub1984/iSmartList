@@ -219,12 +219,8 @@ struct StatsView: View {
             }
             .navigationTitle("Statistics")
             .navigationBarTitleDisplayMode(.inline)
-            .refreshable {
-                // Refresh data if needed
-            }
+        
         }
-        .toolbarBackgroundVisibility(.visible, for: .navigationBar)
-        .toolbarBackground(Color.toolbarColor(for: colorScheme), for: .navigationBar)
     }
 }
 

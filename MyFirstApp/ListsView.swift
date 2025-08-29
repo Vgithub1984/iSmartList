@@ -64,8 +64,7 @@ struct ListsView: View {
     /// Combined active lists excluding deleted and zero item lists, sorted by updatedAt descending.
     private var filteredLists: [MyList] {
         // Show active, zero item, and completed lists combined but excluding deleted
-        // But per instructions, show only active, completed, zeroItem lists distinctly.
-        // Here for main list view, show active + completed + zero item lists combined sorted.
+        // Sort by updatedAt descending so the most recently updated lists appear first
         let combined = activeLists + completedLists + zeroItemLists
         return combined.sorted { $0.updatedAt > $1.updatedAt }
     }
@@ -384,8 +383,6 @@ struct ListRowView: View {
                 ListsView(isShowingListDetail: $isShowingDetail)
                     .environmentObject(dataStore)
             }
-            .toolbarBackgroundVisibility(.visible, for: .navigationBar)
-            .toolbarBackground(Color.toolbarColor(for: colorScheme), for: .navigationBar)
         }
         
         @Environment(\.colorScheme) private var colorScheme
@@ -408,8 +405,6 @@ struct ListRowView: View {
                 ListsView(isShowingListDetail: $isShowingDetail)
                     .environmentObject(dataStore)
             }
-            .toolbarBackgroundVisibility(.visible, for: .navigationBar)
-            .toolbarBackground(Color.toolbarColor(for: colorScheme), for: .navigationBar)
         }
         
         @Environment(\.colorScheme) private var colorScheme

@@ -112,7 +112,7 @@ struct ContentView: View {
     ///
     /// - When `true`, presents a modal sheet for creating a new list.
     /// - The sheet includes a form with validation and keyboard management.
-    @State private var showingNewListDialog = false
+    @State private var isShowingNewListSheet = false
     
     /// The name of the new list being created.
     ///
@@ -131,6 +131,22 @@ struct ContentView: View {
     /// - Used to automatically focus the text field when the new list sheet appears.
     /// - Improves user experience by showing the keyboard immediately.
     @FocusState private var isTextFieldFocused: Bool
+    
+    /// Controls the visibility of the added list confirmation banner.
+    ///
+    /// - When `true`, shows a temporary confirmation message that a new list was created.
+    /// - Automatically hides after 2 seconds.
+    @State private var showListAddedConfirmation = false
+    
+    /// Icon to show in alert overlay.
+    @State private var alertIcon = "info.circle.fill"
+    
+    /// Color to use for alert icon.
+    @State private var alertColor = Color.blue
+    
+    // Alert state for list creation feedback
+    @State private var showAlert = false
+    @State private var alertMessage = ""
 
     // MARK: - Body
     
@@ -154,7 +170,7 @@ struct ContentView: View {
         Button(action: {
             // Reset the new list name and show the creation dialog
             newListName = ""
-            showingNewListDialog = true
+            isShowingNewListSheet = true
         }) {
             Image(systemName: "plus")
                 .font(.system(size: 24, weight: .regular))
@@ -212,8 +228,6 @@ struct ContentView: View {
                 }
                 .navigationTitle("Lists")
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbarBackgroundVisibility(.visible, for: .navigationBar)
-                .toolbarBackground(Color.toolbarColor(for: colorScheme), for: .navigationBar)
         }
     }
     
@@ -232,10 +246,9 @@ struct ContentView: View {
     private var deletedTab: some View {
         NavigationStack {
             DeletedView()
-                .navigationTitle("Trash")
+                .navigationTitle("Deleted")
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbarBackgroundVisibility(.visible, for: .navigationBar)
-                .toolbarBackground(Color.toolbarColor(for: colorScheme), for: .navigationBar)
+              
         }
     }
     
@@ -245,8 +258,7 @@ struct ContentView: View {
             StatsView()
                 .navigationTitle("Statistics")
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbarBackgroundVisibility(.visible, for: .navigationBar)
-                .toolbarBackground(Color.toolbarColor(for: colorScheme), for: .navigationBar)
+            
         }
         .tabItem { tabLabel(title: "Stats", systemImage: "chart.bar", tag: 2) }
         .tag(2)
@@ -258,8 +270,7 @@ struct ContentView: View {
             ProfileView()
                 .navigationTitle("Profile")
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbarBackgroundVisibility(.visible, for: .navigationBar)
-                .toolbarBackground(Color.toolbarColor(for: colorScheme), for: .navigationBar)
+             
         }
     }
     
@@ -287,11 +298,23 @@ struct ContentView: View {
         NavigationView {
             Form {
                 Section {
-                    TextField("Enter List Name", text: $newListName, onCommit: createNewList)
+                    TextField("Enter List Name", text: $newListName)
                         .focused($isTextFieldFocused)
-                        .onAppear {
-                            // Set focus immediately when the view appears
-                            isTextFieldFocused = true
+                        .onSubmit {
+                            let trimmedName = newListName.trimmingCharacters(in: .whitespacesAndNewlines)
+                            if !trimmedName.isEmpty {
+                                createNewList()
+                                isShowingNewListSheet = false
+                                showListAddedConfirmation = true
+                                // Dismiss keyboard focus
+                                isTextFieldFocused = false
+                                // Auto-hide confirmation banner after 2 seconds
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                    withAnimation {
+                                        showListAddedConfirmation = false
+                                    }
+                                }
+                            }
                         }
                         .submitLabel(.done)
                 } header: {
@@ -300,6 +323,20 @@ struct ContentView: View {
                     Text("Enter a name for your new list")
                 }
             }
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        isShowingNewListSheet = false
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Add") {
+                        createNewList()
+                    }
+                    .disabled(newListName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+            // Removed the .alert(isPresented: $showAlert) modifier as per instructions
             .onAppear {
                 // Ensure focus is set when the sheet appears
                 DispatchQueue.main.async {
@@ -309,30 +346,19 @@ struct ContentView: View {
             .onDisappear {
                 // Reset the text field when the sheet is dismissed
                 newListName = ""
+                // Also dismiss keyboard focus
+                isTextFieldFocused = false
             }
             .navigationTitle("New List")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        showingNewListDialog = false
-                    }
-                }
-                
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Create") {
-                        createNewList()
-                        showingNewListDialog = false
-                    }
-                    .disabled(newListName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
-            }
         }
         // Handle swipe-to-dismiss with state cleanup
-        .onChange(of: showingNewListDialog) { isPresented in
-            if !isPresented {
-                // Reset the text field when dismissed
+        .onChange(of: isShowingNewListSheet) { isPresented in
+            if isPresented {
+                isTextFieldFocused = true
+            } else {
                 newListName = ""
+                isTextFieldFocused = false
             }
         }
     }
@@ -341,10 +367,27 @@ struct ContentView: View {
     /// - Note: Trims whitespace and newlines from the list name.
     private func createNewList() {
         let trimmedName = newListName.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !trimmedName.isEmpty {
-            let newList = MyList(name: trimmedName)
-            dataStore.addList(newList)
-            newListName = ""
+        guard !trimmedName.isEmpty else { return }
+        
+        // Create and add the new list
+        let newList = MyList(name: trimmedName)
+        dataStore.addList(newList)
+        
+        // Show success feedback
+        alertMessage = "List named: \"\(trimmedName)\" was created."
+        alertIcon = "checkmark.circle.fill"
+        alertColor = Color.green
+        showAlert = true
+        
+        // Reset input field and dismiss keyboard
+        newListName = ""
+        isTextFieldFocused = false
+        
+        // Auto-dismiss after 1.5 seconds
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            showAlert = false
+            // Dismiss the sheet after showing the success message
+            isShowingNewListSheet = false
         }
     }
     
@@ -382,11 +425,46 @@ struct ContentView: View {
             }
         }
         // Present the new list sheet when requested
-        .sheet(isPresented: $showingNewListDialog) {
+        .sheet(isPresented: $isShowingNewListSheet) {
             newListSheet
         }
         // Ensure keyboard doesn't affect the layout
         .ignoresSafeArea(.keyboard)
+        .overlay(
+            Group {
+                if showAlert {
+                    VStack(spacing: 12) {
+                        Image(systemName: alertIcon)
+                            .font(.system(size: 28))
+                            .foregroundColor(alertColor)
+                            .shadow(color: Color.primary.opacity(0.1), radius: 2, x: 0, y: 1)
+                        Text(alertMessage)
+                            .font(.subheadline)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 16)
+                    }
+                    .padding(24)
+                    .background(
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(Color(.systemBackground))
+                                .shadow(color: Color.black.opacity(0.15), radius: 20, x: 0, y: 10)
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(Color.primary.opacity(0.1), lineWidth: 0.5)
+                        }
+                    )
+                    .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                    .frame(maxWidth: 300)
+                    .onTapGesture { withAnimation { showAlert = false } }
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.primary.opacity(showAlert ? 0.1 : 0))
+            .edgesIgnoringSafeArea(.all)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showAlert)
+            .onTapGesture { withAnimation { showAlert = false } },
+            alignment: .center
+        )
     }
 }
 

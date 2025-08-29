@@ -52,6 +52,7 @@ struct DeletedView: View {
     // MARK: - Computed Properties
     
     /// The list of deleted lists, filtered by search text and sorted by update time (newest first).
+    /// Sorting ensures the most recently updated (newest) lists appear at the top.
     private var filteredDeletedLists: [MyList] {
         let filtered: [MyList]
         if searchText.isEmpty {
@@ -235,8 +236,6 @@ struct DeletedView: View {
                 }
             }
         }
-        .toolbarBackgroundVisibility(.visible, for: .navigationBar)
-        .toolbarBackground(Color.toolbarColor(for: colorScheme), for: .navigationBar)
     }
 }
 
